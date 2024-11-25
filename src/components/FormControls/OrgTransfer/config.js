@@ -1,6 +1,6 @@
 /* eslint-disable no-useless-escape */
 /* eslint-disable no-prototype-builtins */
-import { GET_DEPT_ROOT, GET_DEPT_TREE, GET_USER_BY_DEPT, GET_PAGE_EMPLOYEE } from '@/api'
+import { GET_DEPT_ROOT, GET_DEPT_TREE, GET_USER_BY_DEPT, GET_PAGE_EMPLOYEE, GET_POSITION_RECORD,GET_ROLE_RECORD, GET_APPROVAL_GROUP } from '@/api'
 
 const toHump = name => name.replace( /\_(\w)/g, function ( all, letter ) {
   return letter.toUpperCase()
@@ -31,6 +31,24 @@ async function loadDepOrUser ( node, loadDep = true ) {
   }
   return nodeData
 }
+
+// 获取角色
+async function loadRoleInfo ( node, loadDep = false ) {
+  let nodeData = []
+  nodeData = ( await GET_ROLE_RECORD() ).data  // 获取部门下人员
+  return nodeData
+}
+
+// 获取岗位
+async function loadPositionInfo ( node, loadDep = false ) {
+  let nodeData = []
+  nodeData = ( await GET_POSITION_RECORD() ).data  // 获取部门下人员
+  return nodeData
+}
+
+
+// 
+// loadPositionInfo
 // 获取组织结构根节点
 // 需要自行设置nodeID  重要！！！
 async function getRootDept () {
@@ -46,8 +64,17 @@ function loadDepData ( node ) {
 }
 
 function loadUserData ( node ) {
-  return loadDepOrUser( node, false )  // 返回的promise
+  return loadDepOrUser( node, true )  // 返回的promise
 }
+
+function loadRoleData ( node ) {
+  return loadRoleInfo( node, false )  // 返回的promise
+}
+function loadPositionData ( node ) {
+  return loadPositionInfo( node, false )  // 返回的promise
+}
+
+
 
 const defaultOption = {
   tabName: '部门',  // 选项卡名称
@@ -78,14 +105,14 @@ const defaultOption = {
   onload: loadDepData,
   // 搜索节点方法 
   onsearch: async function ( searchString, resolve, reject ) {
-    // const param = { page: 1, limit: 200, searchName: searchString }
-    resolve( ( await GET_PAGE_EMPLOYEE() ).data )
+    const param = { page: 1, limit: 200, "q[name_cont]": searchString }
+    resolve( ( await GET_PAGE_EMPLOYEE(param) ).data )
   }
 }
 
 export const DEP_CONFIG = Object.assign( {}, defaultOption )
-export const ROLE_CONFIG = Object.assign( {}, defaultOption, { tabKey: 'role', tabName: '角色' } )
+export const ROLE_CONFIG = Object.assign( {}, defaultOption, { tabKey: 'role', tabName: '角色', onload: loadRoleData  } )
 export const USER_CONFIG = Object.assign( {}, defaultOption, { tabKey: 'user', tabName: '指定人员', onload: loadUserData, disabled: ( data, node ) => !data.hasOwnProperty( 'userId' ) } )
 const DEP_USER_CONFIG = Object.assign( {}, defaultOption, { tabKey: 'dep&user', tabName: '部门和人员', onload: loadUserData, disabled: () => false } )
-const POSITION_CONFIG = Object.assign( {}, defaultOption, { tabKey: 'position', tabName: '岗位' } )
+const POSITION_CONFIG = Object.assign( {}, defaultOption, { tabKey: 'position', tabName: '岗位', onload: loadPositionData } )
 export const CONFIG_LIST = [DEP_CONFIG, ROLE_CONFIG, USER_CONFIG, DEP_USER_CONFIG, POSITION_CONFIG]

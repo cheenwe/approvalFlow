@@ -66,7 +66,43 @@ export default {
      * @param { Object } value - 被编辑的节点的properties属性对象
      */
     onPropEditConfirm(value, content) {
-      this.activeData.content = content || '请设置条件'
+      console.log("<><><><><><><><>");
+      console.log(value);
+      console.log(value.title == "抄送人");
+      // console.log(value.menbers.user.length== 0);
+      console.log(value.userOptional == true);
+      if (value.title == "抄送人" ) {
+        if (value.userOptional == true) {
+          console.log(content);
+          if (content != '') {
+            this.activeData.content = content+',发起人'
+          }else{
+            this.activeData.content = '发起人'
+          }
+        }else{
+          if (content != '') {
+            this.activeData.content = content
+          }
+        }
+      } else if(value.title == "执行人"){
+        if (value.userOptional == true) {
+          console.log("content");
+          console.log(content);
+          if (content != '') {
+            this.activeData.content = content+',发起人'
+          }else{
+            this.activeData.content = '发起人'
+          }
+        }else{
+          if (content != '') {
+            this.activeData.content = content
+          }
+        }
+      } else{
+        console.log("<><><>< out <><><><>");
+        this.activeData.content = content || '请设置条件'
+      }
+      console.log("<><><><><><><><>");
       let oldProp = this.activeData.properties;
       this.activeData.properties = value;
       // 修改优先级

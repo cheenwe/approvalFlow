@@ -11,6 +11,7 @@ function createNormalCard(ctx, conf, h) {
   const isStartNode = afterTrue(NodeUtils.isStartNode(conf), 'start-node')
   const isApprNode = afterTrue(NodeUtils.isApproverNode(conf), 'approver')
   const isCopyNode = afterTrue(NodeUtils.isCopyNode(conf), 'copy')
+  const isRunNode = afterTrue(NodeUtils.isRunNode(conf), 'run')
   return (
     <section class={classList.join(' ')} onClick={this.eventLancher.bind(ctx, "edit", conf)} >
       <header class="header">
@@ -20,6 +21,9 @@ function createNormalCard(ctx, conf, h) {
           )}
           {isCopyNode && (
             <i class="el-icon-s-promotion" style="font-size:12px;color:white;margin-right:4px;"></i>
+          )}
+          {isRunNode && (
+            <i class="el-icon-s-opportunity" style="font-size:12px;color:white;margin-right:4px;"></i>
           )}
           <span class="title-text">{conf.properties.title}</span>
           {!isStartNode && (
@@ -45,6 +49,7 @@ let nodes = {
   start: createFunc,
   approver: createFunc,
   copy: createFunc,
+  run: createFunc,
   empty: _ => '',
   condition: function(ctx, conf, h) {
       // <i
@@ -129,6 +134,13 @@ function addNodeButton(ctx, data, h, isBranch = false) {
                 <i class="iconfont iconshenpi"></i>
               </div>
               审批人
+            </div>
+
+            <div>
+              <div class="condition-icon" onClick={ctx.eventLancher.bind( ctx, "addRunNode",  data, isBranch )} >
+                <i class="el-icon-s-opportunity iconfont" style="vertical-align: middle;"></i>
+              </div>
+              执行人
             </div>
 
             <div>

@@ -35,6 +35,9 @@ export class NodeUtils {
   static isCopyNode ( node ) {
     return node && node.type === 'copy'
   }
+  static isRunNode ( node ) {
+    return node && node.type === 'run'
+  }
   static isStartNode ( node ) {
     return node && node.type === 'start'
   }
@@ -176,6 +179,11 @@ export class NodeUtils {
     let emptyNode = this.createNode( 'empty', data.nodeId )
     this.addApprovalNode( data, true, emptyNode )
     return emptyNode
+  }
+
+  static addRunNode ( data, isBranchAction ) {
+    // 复用addApprovalNode  因为抄送人和执行人基本一致
+    this.addApprovalNode( data, isBranchAction, this.createNode( 'run', data.nodeId ) )
   }
 
   static addCopyNode ( data, isBranchAction ) {

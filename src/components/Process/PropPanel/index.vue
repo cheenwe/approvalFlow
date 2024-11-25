@@ -72,7 +72,7 @@
           :key="index" 
           :title="item.label" 
           v-if="couldShowIt(item,'el-select')">
-          <el-select v-model="item.conditionValue" placeholder="请选择" size="small">
+          <el-select multiple v-model="item.conditionValue" placeholder="请选择" size="small">
             <el-option
               v-for="item in item.options"
               :key="item.value"
@@ -89,7 +89,7 @@
           <fc-org-select 
           v-model="item.conditionValue" 
           :ref="'org' + index" 
-          :tabList="['dep']" 
+          :tabList="['dep&user']"
           />
           <template v-slot:action>
             <i  class="el-icon-delete" style="cursor: pointer;" @click="onDelCondition(item)"></i>
@@ -132,14 +132,15 @@
                 </el-select>
               </div>
               <div v-else-if="approverForm.assigneeType === 'director'">
-                <div style="font-size: 14px;padding-left: 1rem;">发起人的 
+                <div class="option-box" style="color: #a5a5a5;">发起人所在部门的负责人审批</div>
+                <!-- <div style="font-size: 14px;padding-left: 1rem;">发起人的 
                   <el-select v-model="directorLevel" size="small">
                     <el-option v-for="item in 5" :key="item" :label="item === 1 ? '直接主管': `第${item}级主管`" :value="item"
                     ></el-option>
                   </el-select>
                   <br>
                   <el-checkbox v-model="useDirectorProxy" style="margin-top: 1rem;">找不到主管时，由上级主管代审批</el-checkbox>
-                </div>
+                </div> -->
               </div>
               <div v-else class="option-box">
                 <fc-org-select  
@@ -147,7 +148,8 @@
                 buttonType="button" 
                 v-model="orgCollection" 
                 :title="getAssignTypeLabel()" 
-                :tabList="fcOrgTabList.includes(approverForm.assigneeType) ? [approverForm.assigneeType] : ['dep']" 
+                :tabList="fcOrgTabList.includes(approverForm.assigneeType) ? [approverForm.assigneeType] : ['dep&user']" 
+                
                 @change="onOrgChange" />
               </div>
             </div>
@@ -160,7 +162,7 @@
           </div>
 
         </el-tab-pane>
-        <el-tab-pane label="表单权限" name="formAuth">
+        <!-- <el-tab-pane label="表单权限" name="formAuth">
           <div class="form-auth-table">
             <header class="auth-table-header">
               <div class="row">
@@ -186,15 +188,33 @@
               </div>
             </div>
           </div>
-        </el-tab-pane>
+        </el-tab-pane> -->
       </el-tabs>
     </section>
 
     <section  v-if="value && isCopyNode()" style="padding-left: 1rem;">
       <p>抄送人</p>
-      <fc-org-select ref="copy-org" v-model="properties.menbers" buttonType="button" title="抄送人" />
+      <fc-org-select ref="copy-org" v-model="properties.menbers" :tabList="['user']"  buttonType="button" title="抄送人" />
       <br>
-      <el-checkbox v-model="properties.userOptional">允许发起人自选抄送人</el-checkbox>
+      <el-checkbox v-model="properties.userOptional">抄送发起人</el-checkbox>
+    </section>
+
+    <section  v-if="value && isRunNode()" style="padding-left: 1rem;">
+      <p>执行人</p>
+      <fc-org-select ref="copy-org" v-model="properties.approvers" :tabList="['user']" buttonType="button" title="执行人" />
+
+      <el-checkbox v-model="properties.userOptional">发起人执行</el-checkbox>
+
+      <p>注意，执行人只能选择一个，或者直接勾选发起人执行</p>
+
+<!-- 
+      <div class="option-box" style="border-bottom: 1px solid #e5e5e5;" >
+        <p>多人审批时采用的审批方式</p>
+        <el-radio v-model="properties.counterSign" :label="true" class="radio-item">会签（须所有审批人同意）</el-radio>
+        <br>
+        <el-radio  v-model="properties.counterSign"  :label="false" class="radio-item">或签（一名审批人同意或拒绝即可）</el-radio>
+      </div> -->
+      
     </section>
 
     <el-dialog title="选择条件" :visible.sync="dialogVisible" width="500px" :append-to-body="true" custom-class="condition-dialog">
@@ -288,11 +308,15 @@ export default {
       
       assigneeTypeOptions:[
         {
+          label:'发起人',
+          value: 'myself'
+        },
+        {
           label:'指定成员',
           value: 'user'
         },
         {
-          label:'主管',
+          label:'部门负责人',
           value: 'director'
         },
         {
@@ -302,15 +326,7 @@ export default {
         {
           label:'岗位',
           value: 'position'
-        },
-        {
-          label:'发起人自己',
-          value: 'myself'
-        },
-        {
-          label:'发起人自选',
-          value: 'optional'
-      }]
+        }]
     };
   },
   computed: {
@@ -388,13 +404,22 @@ export default {
       this.properties = this.value.properties
     },
 
+    initRunNode () {
+      this.properties = this.value.properties
+    },
+
     initStartNodeData(){
       this.initInitiator()
       this.startForm.formOperates = this.initFormOperates(this.value)
     },
 
     copyNodeConfirm () {
-      this.$emit("confirm", this.properties, this.getOrgSelectLabel('copy') || '发起人自选');
+      this.$emit("confirm", this.properties, this.getOrgSelectLabel('copy'));
+      this.visible = false;
+    },
+
+    runNodeConfirm () {
+      this.$emit("confirm", this.properties, this.getOrgSelectLabel('copy'));
       this.visible = false;
     },
 
@@ -435,12 +460,25 @@ export default {
       // 发起人虽然是条件 但是这里把发起人放到外部单独判断
       this.properties.initiator = this.initiator['dep&user']
       this.initiator['dep&user'] && (nodeContent = `[发起人: ${this.getOrgSelectLabel('condition')}]` + '\n' + nodeContent)
+
+      // console.log("《《《《《《《》》》》》");
+      // console.log(this.properties);
+      // console.log(this);
+      // console.log("《《《《《《《》》》》》");
+
       this.$emit("confirm", this.properties, nodeContent || '请设置条件');
       this.visible = false;
     },
 
     getOrgSelectLabel (type) {
-      return this.$refs[type + '-org']['selectedLabels']
+      console.log(type)
+      console.log(this.$refs[type + '-org'])
+      // console.log(type)
+      if(this.$refs[type + '-org'] == undefined ){
+        return []
+      }else{
+        return this.$refs[type + '-org']['selectedLabels']
+      }
     },
     /**
      * 开始节点确认保存
@@ -456,12 +494,18 @@ export default {
      * 审批节点确认保存
      */
     approverNodeComfirm() {
+      console.log("this.approverForm");
+      console.log(this.approverForm);
+      console.log("this.approverForm");
+
       const assigneeType = this.approverForm.assigneeType
       let content = ''
-      if (['optional','myself'].includes(assigneeType)) {
+      if (['optional'].includes(assigneeType)) {
         content = this.assigneeTypeOptions.find(t => t.value === assigneeType).label
       } else if('director' === assigneeType){
-        content = this.directorLevel === 1 ? '直接主管' : `第${this.directorLevel}级主管`
+        content =  '部门负责人'
+      } else if('myself' === assigneeType){
+        content =  '发起人'
       } else{
         content = this.getOrgSelectLabel('approver')
       }
@@ -474,6 +518,7 @@ export default {
     // 确认修改
     confirm() {
       this.isCopyNode() && this.copyNodeConfirm()
+      this.isRunNode() && this.runNodeConfirm()
       this.isStartNode() && this.startNodeComfirm()
       this.isApproverNode() && this.approverNodeComfirm()
       this.isConditionNode() && this.conditionNodeComfirm() 
@@ -520,6 +565,10 @@ export default {
       return this.value ? NodeUtils.isCopyNode(this.value) : false
     },
 
+    isRunNode () {
+      return this.value ? NodeUtils.isRunNode(this.value) : false
+    },
+
     initInitiator(){
       const initiator = this.value.properties && this.value.properties.initiator
       this.initiator['dep&user'] = Array.isArray(initiator) ? initiator : []
@@ -547,6 +596,8 @@ export default {
       // 初始化条件表单数据
       let nodeConditions = this.value.properties && this.value.properties.conditions
       this.pconditions = JSON.parse(JSON.stringify(this.$store.state.processConditions));
+      console.log("this.pconditions")
+      console.log(this.pconditions)
       this.initiator['dep&user'] = this.value.properties.initiator
       if(Array.isArray(this.pconditions)){
         this.showingPCons = [-1] // 默认显示发起人

@@ -363,7 +363,7 @@ export default {
           if(isRangeCmp && !conf.showDuration) return false
           if(parent && parent.rowType === 'table') return false 
           if(!conf.proCondition || !conf.required) return false
-          if(conf.tag === 'el-select' && conf.multiple) return false
+          // if(conf.tag === 'el-select' && conf.multiple) return false
           return true 
         }
         const loop = (data, parent) => {

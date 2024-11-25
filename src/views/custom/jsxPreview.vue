@@ -1,6 +1,6 @@
 <script>
 import render from '@/utils/render.js'
-import { GET_MOCK_CONF } from '../../api'
+import { GET_APPROVAL_CONF } from '../../api'
 import { trigger } from '@/components/DynamicForm/components/generator/config.js'
 /**
  * 校验组织机构组件是否为空
@@ -248,7 +248,7 @@ export default {
       });
     },
     getConfigByAjax() {
-      GET_MOCK_CONF().then(res => {
+      GET_APPROVAL_CONF().then(res => {
         this.confGlobal = Object.freeze(res.formData);
         this.initDefaultData(res.formData);
       });

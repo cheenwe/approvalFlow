@@ -61,11 +61,13 @@
 
 <script>
 // @ is an alias to /src
+import axios from 'axios'
+
 import Process from "@/components/Process";
 import DynamicForm from "@/components/DynamicForm";
 import BasicSetting from '@/components/BasicSetting'
 import AdvancedSetting from '@/components/AdvancedSetting'
-import { GET_MOCK_CONF } from '../../api'
+import { GET_APPROVAL_CONF, POST_APPROVAL_CONF } from '../../api'
 const beforeUnload = function (e) {
   var confirmationMessage = '离开网站可能会丢失您编辑得内容';
   (e || window.event).returnValue = confirmationMessage;     // Gecko and Trident
@@ -77,12 +79,13 @@ export default {
   props: {
     title: {
       type: String,
-      default: '补卡申请'
+      default: '流程配置'
     }
   },
   data() {
     return {
       mockData: null, // 可选择诸如 $route.param，Ajax获取数据等方式自行注入
+      data: null, // 可选择诸如 $route.param，Ajax获取数据等方式自行注入
       activeStep: "basicSetting", // 激活的步骤面板
       steps: [
         { label: "基础设置", key: "basicSetting" },
@@ -91,6 +94,7 @@ export default {
         { label: "高级设置", key: "advancedSetting" }
       ]
     };
+    
   },
   beforeRouteEnter(to, from, next){
     window.addEventListener('beforeunload', beforeUnload)
@@ -104,13 +108,38 @@ export default {
     translateX () {
       return `translateX(${this.steps.findIndex(t => t.key === this.activeStep) * 100}%)`
     }
+    
   },
   mounted() {
-    GET_MOCK_CONF().then(data => this.mockData = data);
+    GET_APPROVAL_CONF(this.$route.query).then(data => this.mockData = data);
   },
   methods: {
     changeSteps(item) {
       this.activeStep = item.key;
+    },
+    submitData(data) {
+      // 构造请求参数
+      console.log(data)
+      const params = data
+      // POST_APPROVAL_CONF(data)
+      
+      // 发送POST请求
+      axios.post('/api/v1/approver_config', params)
+      .then(response => {
+        // 请求成功，处理结果
+        // this.handleResponse(response);
+        console.log(response)
+        this.$message({
+          type: 'success',
+          message: '数据更新完成',
+        });
+      })
+      .catch(error => {
+        // 请求失败，处理错误
+        console.error(error);
+      });
+      console.log(data)
+
     },
     publish() {
       const getCmpData = name => this.$refs[name].getData()
@@ -119,15 +148,19 @@ export default {
       const p1 = getCmpData('basicSetting') 
       const p2 = getCmpData('formDesign')
       const p3 = getCmpData('processDesign')
+      const id = this.$route.query.id
+      console.log(this.$route.query.id)
       Promise.all([p1, p2, p3])
       .then(res => {
         const param = {
+          id: id,
           basicSetting: res[0].formData,
           processData: res[2].formData,
           formData: res[1].formData,
           advancedSetting: getCmpData('advancedSetting')
         }
-        this.sendToServer(param)
+        // this.sendToServer(param)
+        this.submitData(param)
       })
       .catch(err => {
         err.target && (this.activeStep = err.target)
@@ -135,12 +168,20 @@ export default {
       })
     },
     sendToServer(param){
-      this.$notify({
-        title: '数据已整合完成',
-        message: '请在控制台中查看数据输出',
-        position: 'bottom-right'
-      });
       console.log('配置数据', param)
+      this.submitData(param)
+      // POST_APPROVAL_CONF(param).then(
+      //   (res) => {
+      //     console.log(res)
+      //     this.$notify({
+      //       title: '数据已整合完成',
+      //       message: '请在控制台中查看数据输出',
+      //       position: 'bottom-right'
+      //     });
+      //   }
+      // );
+      console.log('配置数据1', param)
+
     },
     exit() {
       this.$confirm('离开此页面您得修改将会丢失, 是否继续?', '提示', {
@@ -163,6 +204,7 @@ export default {
       startNode.properties.initiator = val['dep&user']
       startNode.content =  labels  || '所有人'
       processCmp.forceUpdate()
+      
     },
     /**
      * 监听 流程节点发起人改变 并同步到基础设置 发起人数据

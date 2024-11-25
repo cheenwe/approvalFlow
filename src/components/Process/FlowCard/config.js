@@ -9,6 +9,14 @@ export default {
     content: "请设置审批人",
     properties: { title: '审批人' }
   },
+  run: {
+    type: "run",
+    content: "请设置执行人",
+    properties: { 
+      title: '执行人',
+      approvers: []
+    }
+  },
   copy:{
     type: 'copy',
     content: '发起人自选',

@@ -23,7 +23,7 @@
       </el-form-item>
       <el-form-item label="模板图标" prop="icon">
         <img :src="activeIconSrc" style="width: 28px;height: 28px;vertical-align: middle;">
-        <el-button  plain size="mini" @click="dialogVisible = true" style="margin-left: 10px;">选择图标</el-button>
+        <el-button    plain size="mini" @click="dialogVisible = true" style="margin-left: 10px;">选择图标</el-button>
       </el-form-item>
       <el-form-item label="审批说明" prop="flowRemark">
         <el-input v-model="formData.flowRemark" type="textarea" placeholder="请输入审批说明" :maxlength="100"
@@ -39,7 +39,7 @@
       :key="index" :src="icon.src" 
       class="icon-item" 
       :class="{active: selectedIcon === icon.id}"
-      @click="selectedIcon = icon.id">
+      @click="selectedIcon = icon.id;setCurrentIcon(icon.id)">
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false; selectedIcon = activeIcon" size="small">取 消</el-button>
         <el-button type="primary" @click="dialogVisible = false; activeIcon = selectedIcon" size="small">确 定</el-button>
@@ -48,6 +48,36 @@
   </div>
 </template>
 <script>
+
+import { GET_APPROVAL_GROUP, GET_ICON_LIST } from '@/api'
+
+
+// 自定义获取分组  重要！！！
+async function getDepChildNode () {
+  const promises = [GET_APPROVAL_GROUP()]
+  let res = []
+  try {
+    res = await Promise.all( promises )
+  } catch ( error ) {/* this.$message.error('获取子节点数据出错')*/ }
+  const nodes = res.reduce( ( p, c ) => {
+    return [...p, ...c.data]
+  }, [] )
+  return nodes
+}
+
+// 自定义获取icon  重要！！！
+async function getIcoinList () {
+  const promises = [GET_ICON_LIST()]
+  let res = []
+  try {
+    res = await Promise.all( promises )
+  } catch ( error ) {/* this.$message.error('获取子节点数据出错')*/ }
+  const nodes = res.reduce( ( p, c ) => {
+    return [...p, ...c.data]
+  }, [] )
+  return nodes
+}
+
 export default {
   components: {},
   props: ['tabName', 'initiator', 'conf'],
@@ -58,6 +88,7 @@ export default {
       dialogVisible: false,
       activeIcon: iconList[0].id,
       selectedIcon: iconList[0].id,
+      activeIconSrc: "",
       formData: {
         flowName: '',
         flowImg: '',
@@ -78,42 +109,54 @@ export default {
         }],
       },
       iconList,
-      flowGroupOptions: [{
-        "label": "假勤管理",
-        "value": 1
-      }, {
-        "label": "人事管理",
-        "value": 2
-      }, {
-        "label": "财务管理",
-        "value": 3
-      }, {
-        "label": "业务管理",
-        "value": 4
-      }, {
-        "label": "行政管理",
-        "value": 5
-      }, {
-        "label": "法务管理",
-        "value": 6
-      }, {
-        "label": "其他",
-        "value": 7
-      }],
+      flowGroupOptions:  []
     }
   },
   computed: {
-    activeIconSrc(){
-      const icon = this.iconList.find(t => t.id === this.activeIcon)
-      return icon ? icon.src : ''
-    }
+    // activeIconSrc(){
+    //   const icon = this.iconList.find(t => t.id === this.activeIcon)
+    //   return icon ? icon.src : ''
+    // }
+
   },
   created() {
     if (typeof this.conf === 'object' && this.conf !== null) {
       Object.assign(this.formData, this.conf)
     }
+
+    const mm = getDepChildNode().then(
+        res => {
+          console.log(res)
+          this.flowGroupOptions = res
+      }
+    )
+    // console.log(this.formData.flowImgSrc)
+    this.activeIconSrc = this.formData.flowImgSrc
+    console.log(this.activeIconSrc)
+
+    // const mb = getIcoinList().then(
+    //     res => {
+    //       console.log(res)
+    //       this.iconList = res
+
+    //     this.activeIconSrc = this.iconList.find(t => t.id === this.activeIcon)
+    //   }
+    // )
+
+
+    // this.activeIcon = this.formData.flowImg
+    // this.selectedIcon = this.formData.flowImg
+    // console.log(mm)
+    // console.log(this.activeIconSrc)
+
+    // console.log(mm)
+
   },
   methods: {
+    setCurrentIcon(id){
+      this.formData.flowImg = id
+      console.log(id)
+    },
     emitInitiator(){
       this.$nextTick(()=>{
         this.$emit('initiatorChange', this.formData.initiator, this.$refs['org-select'].selectedLabels)
@@ -128,6 +171,7 @@ export default {
             return
           }
           this.formData.flowImg = this.activeIcon
+          console.log(this.activeIcon)
           resolve({ formData: this.formData, target: this.tabName})  // TODO 提交表单
         })
       })
